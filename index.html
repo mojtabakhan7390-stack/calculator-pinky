@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ماشین‌حساب صورتی</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: #40202f;
+      background: #fff1f6;
+      font-synthesis: none;
+      --pink: #e83e83;
+      --pink-dark: #a91f5a;
+      --pink-pale: #ffe1ed;
+      --ink: #40202f;
+      --muted: #885d70;
+      --line: #f1cad9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 32px 20px;
+      background-color: #fff1f6;
+      background-image: radial-gradient(#efbdd0 0.8px, transparent 0.8px);
+      background-size: 22px 22px;
+    }
+    .app { width: min(100%, 900px); }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 4px 18px;
+    }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 14px;
+      background: var(--pink);
+      color: white;
+      font-size: 22px;
+      box-shadow: 0 5px 0 #c22d6d;
+    }
+    .brand-name { margin: 0; font-size: 20px; font-weight: 750; letter-spacing: -.045em; }
+    .brand-note { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+    .status { color: var(--pink-dark); font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .shell {
+      overflow: hidden;
+      border: 1px solid #f0c6d7;
+      border-radius: 26px;
+      background: #fffafd;
+      box-shadow: 0 24px 70px #9a3b641a, 0 5px 14px #9a3b6410;
+    }
+    .intro {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 28px 34px 23px;
+      border-bottom: 1px solid #f6dce6;
+    }
+    .intro h1 { margin: 0; font-size: clamp(23px, 4vw, 32px); letter-spacing: -.05em; }
+    .intro p { max-width: 340px; margin: 7px 0 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .stamp {
+      flex: 0 0 auto;
+      padding: 9px 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff2f7;
+      color: var(--pink-dark);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .modes {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      padding: 17px 30px 15px;
+      border-bottom: 1px solid #f6dce6;
+      scrollbar-width: thin;
+    }
+    .mode {
+      flex: 0 0 auto;
+      padding: 10px 15px;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      background: transparent;
+      color: #805467;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .mode[aria-pressed="true"] { border-color: #f3c0d3; background: var(--pink-pale); color: #99194d; }
+    .workspace { padding: 26px 30px 30px; }
+    .panel { width: min(100%, 620px); margin-inline: auto; }
+    [hidden] { display: none !important; }
+    .screen {
+      direction: ltr;
+      min-height: 126px;
+      display: flex;
+      flex-direction: column;
+      align-items: end;
+      justify-content: center;
+      overflow: hidden;
+      margin-bottom: 17px;
+      padding: 18px 24px;
+      border: 1px solid #f3d0de;
+      border-radius: 18px;
+      background: #fff3f8;
+      text-align: right;
+    }
+    .screen-label { align-self: stretch; color: var(--muted); font-size: 12px; }
+    output {
+      display: block;
+      width: 100%;
+      overflow: hidden;
+      padding-top: 8px;
+      color: #63223f;
+      font-size: clamp(42px, 10vw, 62px);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.065em;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .keys { direction: ltr; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    button { font: inherit; }
+    .key {
+      min-height: 62px;
+      border: 1px solid #f2dce5;
+      border-radius: 15px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 20px;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: background-color .12s, transform .12s, border-color .12s;
+    }
+    .key:hover { border-color: #ecafc7; background: #fff2f7; }
+    .key:active { transform: scale(.97); }
+    .key.utility { background: #fce6ef; color: #9b2b5b; }
+    .key.operator { border-color: #f4c1d4; background: #fbd9e7; color: #991d50; }
+    .key.equals { border-color: var(--pink); background: var(--pink); color: #fff; font-weight: 750; box-shadow: 0 4px 0 #c42d6d; }
+    .key.equals:hover { border-color: #d82f73; background: #d82f73; }
+    .key.zero { grid-column: span 2; }
+    button:focus-visible, input:focus-visible { outline: 3px solid #8b1648; outline-offset: 3px; }
+    .finance-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px 16px; }
+    .field { display: grid; gap: 7px; }
+    .field label { color: #593346; font-size: 13px; font-weight: 700; }
+    .field small { color: var(--muted); font-size: 11px; }
+    input {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 13px;
+      border: 1px solid #eac7d5;
+      border-radius: 11px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: 16px;
+    }
+    input:focus { border-color: var(--pink); }
+    .submit {
+      grid-column: 1 / -1;
+      min-height: 50px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--pink);
+      color: white;
+      font-size: 15px;
+      font-weight: 750;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #c42d6d;
+    }
+    .submit:hover { background: #d82f73; }
+    .error { grid-column: 1 / -1; min-height: 1.2em; margin: 0; color: #a51a43; font-size: 13px; }
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 22px;
+    }
+    .result {
+      padding: 15px;
+      border: 1px solid #f1d4df;
+      border-radius: 13px;
+      background: #fff5f9;
+    }
+    .result span { display: block; color: var(--muted); font-size: 12px; }
+    .result strong { display: block; margin-top: 7px; color: #63223f; font-size: 20px; font-variant-numeric: tabular-nums; }
+    .hint { margin: 16px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .learn-button { border: 0; background: none; color: var(--pink-dark); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+    .course-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: #40202f99; }
+    .course { width: min(100%, 500px); padding: 28px; border: 1px solid #f0c6d7; border-radius: 24px; background: #fffafd; box-shadow: 0 24px 80px #40202f40; }
+    .course h2 { margin: 0 0 8px; color: #63223f; font-size: 24px; }
+    .course p { margin: 0; color: var(--muted); line-height: 1.8; }
+    .course-step { display: none; min-height: 125px; padding: 18px 0 4px; }
+    .course-step.active { display: block; }
+    .course-step strong { display: block; margin-bottom: 8px; color: #99194d; font-size: 16px; }
+    .course-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 20px; }
+    .course-actions button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 11px; background: var(--pink); color: white; font: inherit; font-weight: 700; cursor: pointer; }
+    .course-actions .course-skip { background: var(--pink-pale); color: var(--pink-dark); }
+    .course-count { color: var(--muted); font-size: 12px; }
+    @media (max-width: 560px) {
+      body { padding: 18px 12px; }
+      .topbar { margin: 0 3px 13px; }
+      .brand { min-width: 0; }
+      .brand-name { font-size: 17px; white-space: nowrap; }
+      .brand-note { font-size: 11px; }
+      .status { max-width: 126px; white-space: normal; text-align: right; }
+      .shell { border-radius: 21px; }
+      .intro { align-items: start; flex-direction: column; padding: 22px 20px 18px; gap: 14px; }
+      .intro p { font-size: 13px; }
+      .modes { padding: 13px 14px; }
+      .mode { padding: 9px 11px; }
+      .workspace { padding: 20px 16px 22px; }
+      .finance-form { grid-template-columns: 1fr; }
+      .submit, .error { grid-column: auto; }
+      .key { min-height: 56px; }
+      .keys { gap: 8px; }
+    }
+    @media (max-width: 360px) {
+      .finance-form { grid-template-columns: 1fr; }
+      .submit, .error { grid-column: auto; }
+      .status { font-size: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="course-backdrop" id="course" hidden>
+    <section class="course" role="dialog" aria-modal="true" aria-labelledby="course-title">
+      <h2 id="course-title">آموزش سریع ماشین‌حساب</h2>
+      <p>در چند قدم با بخش‌های اصلی آشنا شوید.</p>
+      <div class="course-step active"><strong>۱. محاسبه معمولی</strong><p>عددها را وارد کنید، سپس عملگر جمع، تفریق، ضرب یا تقسیم را بزنید. دکمه مساوی نتیجه را نشان می‌دهد. با صفحه‌کلید هم می‌توانید کار کنید.</p></div>
+      <div class="course-step"><strong>۲. محاسبه وام</strong><p>از منوی «وام» مبلغ، نرخ سالانه و مدت را وارد کنید. نتیجه، قسط ماهانه، کل پرداخت و سود کل را نشان می‌دهد.</p></div>
+      <div class="course-step"><strong>۳. رشد سرمایه</strong><p>در بخش «رشد»، مبلغ شروع، نرخ رشد سالانه و تعداد سال را وارد کنید تا ارزش آینده و سود به‌دست‌آمده محاسبه شود.</p></div>
+      <div class="course-step"><strong>۴. تخفیف</strong><p>در بخش «تخفیف» قیمت اصلی و درصد تخفیف را وارد کنید. ماشین‌حساب مقدار صرفه‌جویی و قیمت نهایی را نمایش می‌دهد.</p></div>
+      <div class="course-actions"><button class="course-skip" type="button" data-course="skip">بستن</button><span class="course-count">۱ از ۴</span><button type="button" data-course="next">بعدی</button></div>
+    </section>
+  </div>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">✿</span>
+        <div><p class="brand-name">ماشین‌حساب صورتی</p><p class="brand-note">محاسبه ساده، نتیجه روشن</p></div>
+      </div>
+      <button class="learn-button" type="button" data-course="open">آموزش دوباره</button>
+    </header>
+    <section class="shell" aria-label="ماشین‌حساب صورتی">
+      <div class="intro">
+        <div><h1>محاسبه را ساده کنید.</h1><p>جمع‌وتفریق، برآورد وام، رشد سرمایه و تخفیف؛ همه در یک ابزار ساده.</p></div>
+        <span class="stamp">محاسبه مالی، ساده و روشن</span>
+      </div>
+      <nav class="modes" aria-label="حالت‌های ماشین‌حساب">
+        <button class="mode" type="button" data-mode="basic" aria-pressed="true">ماشین‌حساب</button>
+        <button class="mode" type="button" data-mode="loan" aria-pressed="false">وام</button>
+        <button class="mode" type="button" data-mode="growth" aria-pressed="false">رشد سرمایه</button>
+        <button class="mode" type="button" data-mode="discount" aria-pressed="false">تخفیف</button>
+      </nav>
+      <div class="workspace">
+        <section class="panel" data-panel="basic" aria-label="ماشین‌حساب معمولی">
+          <div class="screen"><span class="screen-label">محاسبه شما</span><output id="display" aria-live="polite" aria-atomic="true">0</output></div>
+          <div class="keys" aria-label="کلیدهای ماشین‌حساب">
+            <button class="key utility" data-action="clear" aria-label="پاک کردن">پاک</button>
+            <button class="key utility" data-action="sign" aria-label="تغییر علامت">+/−</button>
+            <button class="key utility" data-action="percent" aria-label="درصد">%</button>
+            <button class="key operator" data-operator="÷" aria-label="تقسیم">÷</button>
+            <button class="key" data-digit="7">7</button><button class="key" data-digit="8">8</button><button class="key" data-digit="9">9</button>
+            <button class="key operator" data-operator="×" aria-label="ضرب">×</button>
+            <button class="key" data-digit="4">4</button><button class="key" data-digit="5">5</button><button class="key" data-digit="6">6</button>
+            <button class="key operator" data-operator="−" aria-label="تفریق">−</button>
+            <button class="key" data-digit="1">1</button><button class="key" data-digit="2">2</button><button class="key" data-digit="3">3</button>
+            <button class="key operator" data-operator="+" aria-label="جمع">+</button>
+            <button class="key utility" data-action="backspace" aria-label="حذف آخرین رقم">⌫</button>
+            <button class="key zero" data-digit="0">0</button><button class="key" data-action="decimal" aria-label="ممیز">.</button>
+            <button class="key equals" data-action="equals" aria-label="مساوی">=</button>
+          </div>
+          <p class="hint">صفحه‌کلید هم فعال است: عددها، + − * /، Enter، Backspace و Escape.</p>
+        </section>
+        <section class="panel" data-panel="loan" aria-label="محاسبه وام" hidden>
+          <form class="finance-form" data-finance="loan" novalidate>
+            <div class="field"><label for="loan-amount">مبلغ وام</label><input id="loan-amount" name="amount" type="number" min="0.01" step="any" placeholder="25000" required><small>مبلغ را به واحد پول خودتان وارد کنید.</small></div>
+            <div class="field"><label for="loan-rate">نرخ سود سالانه</label><input id="loan-rate" name="rate" type="number" min="0" step="any" placeholder="6.5" required><small>درصد سالانه.</small></div>
+            <div class="field"><label for="loan-years">مدت بازپرداخت</label><input id="loan-years" name="years" type="number" min="0.01" step="any" placeholder="5" required><small>تعداد سال.</small></div>
+            <button class="submit" type="submit">محاسبه قسط ماهانه</button>
+            <p class="error" aria-live="polite"></p>
+          </form>
+          <div class="results" aria-live="polite" aria-atomic="true" hidden></div>
+          <p class="hint">این برآورد بر اساس پرداخت ثابت ماهانه و محاسبه ماهانه سود است؛ کارمزد و مالیات محاسبه نمی‌شود.</p>
+        </section>
+        <section class="panel" data-panel="growth" aria-label="محاسبه رشد سرمایه" hidden>
+          <form class="finance-form" data-finance="growth" novalidate>
+            <div class="field"><label for="growth-start">مبلغ شروع</label><input id="growth-start" name="start" type="number" min="0.01" step="any" placeholder="5000" required><small>مبلغ سرمایه‌گذاری امروز.</small></div>
+            <div class="field"><label for="growth-rate">نرخ رشد سالانه</label><input id="growth-rate" name="rate" type="number" min="0" step="any" placeholder="5" required><small>درصد سالانه.</small></div>
+            <div class="field"><label for="growth-years">مدت زمان</label><input id="growth-years" name="years" type="number" min="0.01" step="any" placeholder="10" required><small>تعداد سال.</small></div>
+            <button class="submit" type="submit">محاسبه رشد</button>
+            <p class="error" aria-live="polite"></p>
+          </form>
+          <div class="results" aria-live="polite" aria-atomic="true" hidden></div>
+          <p class="hint">این برآورد بر اساس محاسبه ماهانه، بدون واریز اضافه، کارمزد و مالیات است.</p>
+        </section>
+        <section class="panel" data-panel="discount" aria-label="محاسبه تخفیف" hidden>
+          <form class="finance-form" data-finance="discount" novalidate>
+            <div class="field"><label for="discount-price">قیمت اصلی</label><input id="discount-price" name="price" type="number" min="0.01" step="any" placeholder="80" required><small>مبلغ را به واحد پول خودتان وارد کنید.</small></div>
+            <div class="field"><label for="discount-rate">درصد تخفیف</label><input id="discount-rate" name="rate" type="number" min="0" max="100" step="any" placeholder="25" required><small>عددی بین ۰ تا ۱۰۰ وارد کنید.</small></div>
+            <button class="submit" type="submit">محاسبه قیمت نهایی</button>
+            <p class="error" aria-live="polite"></p>
+          </form>
+          <div class="results" aria-live="polite" aria-atomic="true" hidden></div>
+          <p class="hint">مالیات و تخفیف‌های دیگر در این محاسبه لحاظ نمی‌شوند.</p>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script>
+    const display = document.querySelector('#display');
+    let current = '0';
+    let stored = null;
+    let pending = null;
+    let replaceCurrent = false;
+
+    function show(value) {
+      current = String(value);
+      display.textContent = current === 'Error'
+        ? 'خطا'
+        : current.replace(/\d/g, digit => '۰۱۲۳۴۵۶۷۸۹'[digit]).replace('.', '٫');
+    }
+
+    function calculate(a, b, op) {
+      if (op === '+') return a + b;
+      if (op === '−') return a - b;
+      if (op === '×') return a * b;
+      if (op === '÷') return b === 0 ? 'Error' : a / b;
+    }
+
+    function press(button) {
+      const digit = button.dataset.digit;
+      const action = button.dataset.action;
+      const op = button.dataset.operator;
+
+      if (digit !== undefined) {
+        show(replaceCurrent || current === '0' || current === 'Error' ? digit : current + digit);
+        replaceCurrent = false;
+      } else if (action === 'decimal') {
+        if (replaceCurrent || current === 'Error') show('0.');
+        else if (!current.includes('.')) show(current + '.');
+        replaceCurrent = false;
+      } else if (action === 'clear') {
+        stored = null;
+        pending = null;
+        replaceCurrent = false;
+        show('0');
+      } else if (action === 'backspace') {
+        if (!replaceCurrent) show(current.length > 1 ? current.slice(0, -1) : '0');
+      } else if (action === 'sign' && current !== 'Error') {
+        show(String(-Number(current)));
+      } else if (action === 'percent' && current !== 'Error') {
+        show(String(Number(current) / 100));
+      } else if (op) {
+        if (pending && !replaceCurrent) {
+          const result = calculate(stored, Number(current), pending);
+          if (result === 'Error') { show(result); stored = null; pending = null; return; }
+          show(Number(result.toPrecision(12)));
+        }
+        stored = Number(current);
+        pending = op;
+        replaceCurrent = true;
+      } else if (action === 'equals' && pending) {
+        const result = calculate(stored, Number(current), pending);
+        show(result === 'Error' ? result : Number(result.toPrecision(12)));
+        stored = null;
+        pending = null;
+        replaceCurrent = true;
+      }
+    }
+
+    document.querySelector('.keys').addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (button) press(button);
+    });
+
+    document.querySelector('.modes').addEventListener('click', event => {
+      const button = event.target.closest('[data-mode]');
+      if (!button) return;
+      document.querySelectorAll('[data-mode]').forEach(mode => mode.setAttribute('aria-pressed', String(mode === button)));
+      document.querySelectorAll('[data-panel]').forEach(panel => panel.hidden = panel.dataset.panel !== button.dataset.mode);
+    });
+
+    function format(value) {
+      return new Intl.NumberFormat('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+    }
+
+    function displayResults(container, items) {
+      container.replaceChildren(...items.map(([label, value]) => {
+        const card = document.createElement('div');
+        card.className = 'result';
+        const name = document.createElement('span');
+        name.textContent = label;
+        const number = document.createElement('strong');
+        number.textContent = format(value);
+        card.append(name, number);
+        return card;
+      }));
+      container.hidden = false;
+    }
+
+    document.querySelectorAll('[data-finance]').forEach(form => {
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const error = form.querySelector('.error');
+        const results = form.nextElementSibling;
+        error.textContent = '';
+        results.hidden = true;
+        if (!form.checkValidity()) {
+          error.textContent = 'همه فیلدها را با مقدار مجاز پر کنید.';
+          return;
+        }
+        const values = Object.fromEntries(new FormData(form).entries());
+        const numbers = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, Number(value)]));
+        if (Object.values(numbers).some(value => !Number.isFinite(value))) {
+          error.textContent = 'در همه فیلدها عدد معتبر وارد کنید.';
+          return;
+        }
+        let items;
+        if (form.dataset.finance === 'loan') {
+          const { amount, rate, years } = numbers;
+          if (amount <= 0 || rate < 0 || years <= 0 || years > 100) {
+            error.textContent = 'مبلغ و مدت باید مثبت باشند؛ مدت حداکثر ۱۰۰ سال است.';
+            return;
+          }
+          const months = years * 12;
+          const monthlyRate = rate / 1200;
+          const payment = monthlyRate === 0 ? amount / months : amount * monthlyRate / (1 - (1 + monthlyRate) ** -months);
+          items = [['قسط ماهانه', payment], ['مجموع پرداخت', payment * months], ['مجموع سود', payment * months - amount]];
+        } else if (form.dataset.finance === 'growth') {
+          const { start, rate, years } = numbers;
+          if (start <= 0 || rate < 0 || years <= 0 || years > 1000) {
+            error.textContent = 'مبلغ شروع و مدت باید مثبت باشند؛ مدت حداکثر ۱۰۰۰ سال است.';
+            return;
+          }
+          const end = start * (1 + rate / 1200) ** (years * 12);
+          if (!Number.isFinite(end)) { error.textContent = 'حاصل این مقادیر بیش از حد بزرگ است.'; return; }
+          items = [['ارزش آینده', end], ['سود به‌دست‌آمده', end - start]];
+        } else {
+          const { price, rate } = numbers;
+          if (price <= 0 || rate < 0 || rate > 100) {
+            error.textContent = 'قیمت باید مثبت و تخفیف بین ۰ تا ۱۰۰ درصد باشد.';
+            return;
+          }
+          const savings = price * rate / 100;
+          items = [['میزان صرفه‌جویی', savings], ['قیمت پس از تخفیف', price - savings]];
+        }
+        if (items.some(([, value]) => !Number.isFinite(value))) {
+          error.textContent = 'حاصل این مقادیر بیش از حد بزرگ است.';
+          return;
+        }
+        displayResults(results, items);
+      });
+    });
+
+    const course = document.querySelector('#course');
+    const courseSteps = [...document.querySelectorAll('.course-step')];
+    const courseCount = document.querySelector('.course-count');
+    let courseIndex = 0;
+
+    function updateCourse() {
+      courseSteps.forEach((step, index) => step.classList.toggle('active', index === courseIndex));
+      courseCount.textContent = `${courseIndex + 1} از ${courseSteps.length}`.replace(/\d/g, digit => '۰۱۲۳۴۵۶۷۸۹'[digit]);
+      document.querySelector('[data-course="next"]').textContent = courseIndex === courseSteps.length - 1 ? 'تمام' : 'بعدی';
+    }
+
+    document.querySelectorAll('[data-course]').forEach(button => {
+      button.addEventListener('click', () => {
+        const action = button.dataset.course;
+        if (action === 'open') {
+          courseIndex = 0;
+          updateCourse();
+          course.hidden = false;
+          document.querySelector('[data-course="next"]').focus();
+        } else if (action === 'skip') {
+          course.hidden = true;
+        } else if (action === 'next') {
+          if (courseIndex === courseSteps.length - 1) course.hidden = true;
+          else { courseIndex += 1; updateCourse(); }
+        }
+      });
+    });
+
+    course.addEventListener('click', event => {
+      if (event.target === course) course.hidden = true;
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.target instanceof Element && event.target.matches('input, button, textarea, select')) return;
+      const key = event.key;
+      const button = key >= '0' && key <= '9'
+        ? document.querySelector(`[data-digit="${key}"]`)
+        : ({ '.': document.querySelector('[data-action="decimal"]'),
+             ',': document.querySelector('[data-action="decimal"]'),
+             '+': document.querySelector('[data-operator="+"]'),
+             '-': document.querySelector('[data-operator="−"]'),
+             '*': document.querySelector('[data-operator="×"]'),
+             '/': document.querySelector('[data-operator="÷"]'),
+             'Enter': document.querySelector('[data-action="equals"]'),
+             '=': document.querySelector('[data-action="equals"]'),
+             'Backspace': document.querySelector('[data-action="backspace"]'),
+             'Escape': document.querySelector('[data-action="clear"]') })[key];
+      if (button) {
+        event.preventDefault();
+        press(button);
+      }
+    });
+  </script>
+</body>
+</html>
